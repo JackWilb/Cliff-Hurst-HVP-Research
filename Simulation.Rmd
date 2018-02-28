@@ -1,0 +1,362 @@
+---
+title: "Simulation"
+output: html_notebook
+---
+
+### By Jack Wilburn
+
+### Libraries
+
+```{r, warning = FALSE, message = FALSE}
+library(dplyr)
+library(mosaic)
+library(reshape2)
+library(readr)
+library(gridExtra)
+library(GGally)
+```
+
+
+### Simulation
+
+```{r}
+std = c(6,9,10,11,13,5,17,16,12,4,1,18,2,14,8,15,3,7)
+set.seed(1)
+n = 10000
+cols = c("dimIPart1", "dimEPart1", "dimSPart1", "intIPart1", "intEPart1", 
+                    "intSPart1", "difPart1", "intPart1", "dimPart1", "diPart1", "disPart1",
+                    "VQ1", "VQ2", "dimPercPart1", "intPercPart1", "aiPercPart1", 
+                    "dimIPart2", "dimEPart2", "dimSPart2", "intIPart2", 'intEPart2', 
+                    "intSPart2", "difPart2", "intPart2", "dimPart2", "diPart2", "disPart2",
+                    "SQ1", "SQ2", "dimPercPart2", "intPercPart2", "aiPercPart2",
+                    "BQr1", "BQr2", "BQa1", "BQa2", "CQ1", "CQ2", "rho1", "rho2", 'difPart1difPart2')
+output = data.frame(dimIPart1 = 1, dimEPart1 = 1, dimSPart1 = 1, intIPart1 = 1, intEPart1 = 1, 
+                    intSPart1 = 1, difPart1 = 1, intPart1 = 1, dimPart1 = 1, diPart1 = 1, disPart1 = 1,
+                    VQ1 = 1, VQ2 = 1, dimPercPart1 = 1, intPercPart1 = 1, aiPercPart1 = 1, 
+                    dimIPart2 = 1, dimEPart2 = 1, dimSPart2 = 1, intIPart2 = 1, intEPart2 = 1, 
+                    intSPart2 = 1, difPart2 = 1, intPart2 = 1, dimPart2 = 1, diPart2 = 1, disPart2 = 1,
+                    SQ1 = 1, SQ2 = 1, dimPercPart2 = 1, intPercPart2 = 1, aiPercPart2 = 1,
+                    BQr1 = 1, BQr2 = 1, BQa1 = 1, BQa2 = 1, CQ1 = 1, CQ2 = 1, rho1 = 1, rho2 = 1,
+                    difPart1difPart2 = 1)
+output= output[-1,]
+
+for (i in 1:n) {
+  jack1 = sample(18,18)
+  jack2 = sample(18,18)
+  # Step 2
+  step2Part1 = abs(jack1 - std)
+  
+  # Step 3
+  step3Part1 = rep(NA, 18)
+  for (i in 1:18) {
+    if (step2Part1[i] >= 2) {
+      step3Part1[i] = step2Part1[i] - 2
+    } else if (step2Part1[i] == 1 || step2Part1[i] == 0) {
+      step3Part1[i] = 0
+    }
+  }
+  
+  # Step 4
+  dimIPart1 = sum(step2Part1[c(6,10:12,14,16)])
+  dimEPart1 = sum(step2Part1[c(1,4,5,7,13,15)])
+  dimSPart1 = sum(step2Part1[c(2,3,8,9,17,18)])
+  
+  # Step 5
+  intIPart1 = sum(step3Part1[c(6,10:12,14,16)])
+  intEPart1 = sum(step3Part1[c(1,4,5,7,13,15)])
+  intSPart1 = sum(step3Part1[c(2,3,8,9,17,18)])
+  
+  # Step 6
+  difPart1 = dimIPart1 + dimEPart1 + dimSPart1
+  
+  # Step 7
+  intPart1 = intIPart1 + intEPart1 + intSPart1
+  
+  # Step 8
+  dimPart1 = 0
+  dimPart1 = dimPart1 + max(dimIPart1,dimEPart1,dimSPart1) - dimIPart1
+  dimPart1 = dimPart1 + max(dimIPart1,dimEPart1,dimSPart1) - dimEPart1
+  dimPart1 = dimPart1 + max(dimIPart1,dimEPart1,dimSPart1) - dimSPart1
+  
+  # Step 9 
+  diPart1 = 0
+  diPart1 = diPart1 + max(intIPart1,intEPart1,intSPart1) - intIPart1
+  diPart1 = diPart1 + max(intIPart1,intEPart1,intSPart1) - intEPart1
+  diPart1 = diPart1 + max(intIPart1,intEPart1,intSPart1) - intSPart1
+  
+  # Step 10
+  disPart1 = 0
+  for (i in 1:18) {
+    if (floor(std[i]/10) != floor(jack1[i]/10)) {
+      disPart1 = disPart1 + 1
+    }
+  }
+  
+  # Step 11
+  VQ1 = difPart1 + dimPart1 + intPart1 + disPart1
+  
+  # Step 12
+  VQ2 = dimPart1 + intPart1 + disPart1
+  
+  # Step 13
+  dimPercPart1 = round((dimPart1 * 100) / difPart1)
+  
+  # Step 14
+  intPercPart1 = round((intPart1 * 100) / difPart1)
+  
+  # Step 15 & 16
+  step15Part1 = rep(NA, 18)
+  for (i in 1:18) {
+    if (floor(jack1[i]/10) == 1 && floor(std[i]/10) == 1) {
+      if (jack1[i] > std[i]) {
+        step15Part1[i] = "+"
+      } else {
+        step15Part1[i] = "-"
+      }
+    } else if (floor(jack1[i]/10) == 0 && floor(std[i]/10) == 0) {
+      if (jack1[i] < std[i]) {
+        step15Part1[i] = "+"
+      } else {
+        step15Part1[i] = "-"
+      }
+    } else {
+      step15Part1[i] = "-"
+    }
+  }
+  
+  # Step 17
+  positiveSumPart1 = 0
+  for (i in 1:18) {
+    if (step15Part1[i] == "+") {
+      positiveSumPart1 = positiveSumPart1 + step2Part1[i]
+    }
+  }
+  
+  
+  # Step 18
+  negativeSumPart1 = 0
+  for (i in 1:18) {
+    if (step15Part1[i] == "-") {
+      negativeSumPart1 = negativeSumPart1 + step2Part1[i]
+    }
+  }
+  
+  # Step 19
+  aiPercPart1 = round(negativeSumPart1 * 100 / (positiveSumPart1 + negativeSumPart1))
+  
+  # Step 19.5: repeat for part 2 
+  # Step 2
+  step2Part2 = abs(jack2 - std)
+  
+  # Step 3
+  step3Part2 = rep(NA, 18)
+  for (i in 1:18) {
+    if (step2Part2[i] >= 2) {
+      step3Part2[i] = step2Part2[i] - 2
+    } else if (step2Part2[i] == 1 || step2Part2[i] == 0) {
+      step3Part2[i] = 0
+    }
+  }
+  
+  # Step 4
+  dimIPart2 = sum(step2Part2[c(6,10:12,14,16)])
+  dimEPart2 = sum(step2Part2[c(1,4,5,7,13,15)])
+  dimSPart2 = sum(step2Part2[c(2,3,8,9,17,18)])
+  
+  # Step 5
+  intIPart2 = sum(step3Part2[c(6,10:12,14,16)])
+  intEPart2 = sum(step3Part2[c(1,4,5,7,13,15)])
+  intSPart2 = sum(step3Part2[c(2,3,8,9,17,18)])
+  
+  # Step 6
+  difPart2 = dimIPart2 + dimEPart2 + dimSPart2
+  
+  # Step 7
+  intPart2 = intIPart2 + intEPart2 + intSPart2
+  
+  # Step 8
+  dimPart2 = 0
+  dimPart2 = dimPart2 + max(dimIPart2,dimEPart2,dimSPart2) - dimIPart2
+  dimPart2 = dimPart2 + max(dimIPart2,dimEPart2,dimSPart2) - dimEPart2
+  dimPart2 = dimPart2 + max(dimIPart2,dimEPart2,dimSPart2) - dimSPart2
+  
+  # Step 9 
+  diPart2 = 0
+  diPart2 = diPart2 + max(intIPart2,intEPart2,intSPart2) - intIPart2
+  diPart2 = diPart2 + max(intIPart2,intEPart2,intSPart2) - intEPart2
+  diPart2 = diPart2 + max(intIPart2,intEPart2,intSPart2) - intSPart2
+  
+  # Step 10
+  disPart2 = 0
+  for (i in 1:18) {
+    if (floor(std[i]/10) != floor(jack2[i]/10)) {
+      disPart2 = disPart2 + 1
+    }
+  }
+  
+  # Step 11
+  SQ1 = difPart2 + dimPart2 + intPart2 + disPart2
+  
+  # Step 12
+  SQ2 = dimPart2 + intPart2 + disPart2
+  
+  # Step 13
+  dimPercPart2 = round((dimPart2 * 100) / difPart2)
+  
+  # Step 14
+  intPercPart2 = round((intPart2 * 100) / difPart2)
+  
+  # Step 15 & 16
+  step15Part2 = rep(NA, 18)
+  for (i in 1:18) {
+    if (floor(jack2[i]/10) == 1 && floor(std[i]/10) == 1) {
+      if (jack2[i] > std[i]) {
+        step15Part2[i] = "+"
+      } else {
+        step15Part2[i] = "-"
+      }
+    } else if (floor(jack2[i]/10) == 0 && floor(std[i]/10) == 0) {
+      if (jack2[i] < std[i]) {
+        step15Part2[i] = "+"
+      } else {
+        step15Part2[i] = "-"
+      }
+    } else {
+      step15Part2[i] = "-"
+    }
+  }
+  
+  # Step 17
+  positiveSumPart2 = 0
+  for (i in 1:18) {
+    if (step15Part2[i] == "+") {
+      positiveSumPart2 = positiveSumPart2 + step2Part2[i]
+    }
+  }
+  
+  
+  # Step 18
+  negativeSumPart2 = 0
+  for (i in 1:18) {
+    if (step15Part2[i] == "-") {
+      negativeSumPart2 = negativeSumPart2 + step2Part2[i]
+    }
+  }
+  
+  # Step 19
+  aiPercPart2 = round(negativeSumPart2 * 100 / (positiveSumPart2 + negativeSumPart2))
+  
+  # Step 20 & 21
+  BQr1 = round(SQ1/VQ1, digits = 1)
+  BQa1 = ceiling(mean(c(SQ1,VQ1)))
+  
+  # Step 22 & 23
+  BQr2 = round(SQ2/VQ2, digits = 1)
+  BQa2 = ceiling(mean(c(SQ2,VQ2)))
+  
+  # Step 24 & 25
+  if (BQr1 < 1) {
+    CQ1 = round((2-BQr1) * BQa1)
+  } else {
+    CQ1 = round(BQr1 * BQa1)
+  }
+  if (BQr2 < 1) {
+    CQ2 = round((2-BQr2) * BQa2)
+  } else {
+    CQ2 = round(BQr2 * BQa2)
+  }
+  
+  # Step 26
+  rho1 = (1000 - sum(step2Part1^2))/1000
+  rho2 = (1000 - sum(step2Part2^2))/1000
+  
+  # Step 27
+  difPart1difPart2 = difPart1/difPart2
+  
+  # Bind a new row
+  vector = c(dimIPart1, dimEPart1, dimSPart1, intIPart1, intEPart1, 
+                    intSPart1, difPart1, intPart1, dimPart1, diPart1, disPart1,
+                    VQ1, VQ2, dimPercPart1, intPercPart1, aiPercPart1, 
+                    dimIPart2, dimEPart2, dimSPart2, intIPart2, intEPart2, 
+                    intSPart2, difPart2, intPart2, dimPart2, diPart2, disPart2,
+                    SQ1, SQ2, dimPercPart2, intPercPart2, aiPercPart2,
+                    BQr1, BQr2, BQa1, BQa2, CQ1, CQ2, rho1, rho2, difPart1difPart2)
+  output = rbind(vector, output)
+}
+output = `colnames<-`(output, cols)
+```
+
+### EDA
+
+```{r, fig.width=10, fig.height=20}
+outputmelt = melt(output)
+ggplot(outputmelt,aes(x = value)) + 
+    facet_wrap(~variable,scales = "free", ncol = 4) + 
+    geom_density(fill = "red", alpha = 0.5)
+```
+
+### Exploration of baked in correlation
+
+Correlation between part 1 scores
+```{r}
+corpart1 = cor(output[,c(1:16, 39)])
+#corpart1
+corpart1High = ifelse(abs(corpart1) <= 0.98, NA, corpart1)
+#corpart1High
+corpart1Low = ifelse(abs(corpart1) >= 0.2, NA, corpart1)
+#corpart1Low
+```
+
+Correlation between part 2 scores
+```{r}
+corpart2 = cor(output[,c(17:32, 40)])
+corpart2 = ifelse(corpart2 <= 0.5, NA, corpart2)
+#corpart2
+corpart2High = ifelse(corpart2 <= 0.98, NA, corpart1)
+#corpart2High
+```
+
+cor between all score > .98
+```{r}
+cor = cor(output)
+cor = ifelse(abs(cor) >= .8, cor, NA)
+options(max.print =10000)
+#print(cor)
+```
+
+
+### Questions
+1) Are rho1 and rho2 correlated?
+
+### Answers
+1) 
+```{r}
+ggplot(output, aes(rho1, rho2)) + geom_point(alpha = 0.5)
+cor(output$rho1, output$rho2)
+```
+Rho1 and Rho2 are not correlated in the null model, as we'd expect
+
+Variables that are very strongly correlated in both parts of the test are: 
+DimI/IntI = `r a = cor(output$dimIPart1, output$intIPart1); a`, 
+DimE/IntE = `r b = cor(output$dimEPart1, output$intEPart1); b`, 
+DimS/IntS = `r c = cor(output$dimSPart1, output$intSPart1); c`, 
+Dif/Int = `r d = cor(output$difPart1, output$intPart1); d`, 
+Di/Dim = `r e = cor(output$diPart1, output$dimPart1); e`. 
+
+We expect the first three outcomes since int and dif are both based on the distance of answers to the standard given by hartman. 
+
+We also expect the dif and the int to be correlated since they are the addition of the distances in the 3 parts described above. Since the above parts are correlated, we expect the sum of the three parts to also be highly correlated.
+
+We also expec the di and dim scores to be correlated since they are based on subtracting each dim from the highest dim (for dim), and int from the highest int (for di). Thus correlations between dim and int scores will give us correlation between dim and di scores.
+
+Since using half of these metrics we preserve 99% of the information of the other variables I propose that we don't reall need them in our analyses since they're really saying the same thing. Therefore. We could probably remove all the int part 1 and 2 scores (I, E, S, and Global) since that information is already in the dif score. This means we could reduce our dimension of the matrix by 8 columns while still preserving `r .99^8` of the information in the matrix. We'd have `r ((41-8)/41) * 100` percent of the columns and `r (a*b*c*d*e)^2` which seems like a really great dimension reduction. 
+
+```{r}
+output = output[, c(1:3,7,9:19,23,25:41)]
+```
+
+
+
+
+
+

@@ -1,0 +1,267 @@
+---
+title: "Running HVP Analysis in R"
+output: html_notebook
+---
+
+### By sample1 Wilburn
+
+### Libraries
+
+```{r}
+
+```
+
+### Importing and Data Cleaning
+
+```{r}
+std = c(6,9,10,11,13,5,17,16,12,4,1,18,2,14,8,15,3,7)
+#jack1 = c(3,4,12,11,9,5,16,15,10,7,6,18,2,14,13,17,1,8)
+#jack2 = c(6,8,12,13,16,1,17,14,10,2,3,18,4,11,7,15,5,9)
+ed1 = c(9,5,7,13,11,2,17,15,10,1,3,18,6,14,8,16,4,12)
+ed2 = c(2,6,12,14,17,5,13,15,11,7,1,18,10,4,9,16,3,8)
+
+sample1 = c(5,2,10,11,12,7,16,17,13,6,3,15,1,14,9,18,4,8)
+sample2 = c(5,2,10,11,12,7,13,14,15,6,1,18,8,17,4,16,3,9)
+```
+
+### Steps of the Analysis
+
+```{r}
+# Step 2
+step2Part1 = abs(sample1 - std)
+
+# Step 3
+step3Part1 = rep(NA, 18)
+for (i in 1:18) {
+  if (step2Part1[i] >= 2) {
+    step3Part1[i] = step2Part1[i] - 2
+  } else if (step2Part1[i] == 1 || step2Part1[i] == 0) {
+    step3Part1[i] = 0
+  }
+}
+
+# Step 4
+dimIPart1 = sum(step2Part1[c(6,10:12,14,16)])
+dimEPart1 = sum(step2Part1[c(1,4,5,7,13,15)])
+dimSPart1 = sum(step2Part1[c(2,3,8,9,17,18)])
+
+# Step 5
+intIPart1 = sum(step3Part1[c(6,10:12,14,16)])
+intEPart1 = sum(step3Part1[c(1,4,5,7,13,15)])
+intSPart1 = sum(step3Part1[c(2,3,8,9,17,18)])
+
+# Step 6
+difPart1 = dimIPart1 + dimEPart1 + dimSPart1
+
+# Step 7
+intPart1 = intIPart1 + intEPart1 + intSPart1
+
+# Step 8
+dimPart1 = 0
+dimPart1 = dimPart1 + max(dimIPart1,dimEPart1,dimSPart1) - dimIPart1
+dimPart1 = dimPart1 + max(dimIPart1,dimEPart1,dimSPart1) - dimEPart1
+dimPart1 = dimPart1 + max(dimIPart1,dimEPart1,dimSPart1) - dimSPart1
+
+# Step 9 
+diPart1 = 0
+diPart1 = diPart1 + max(intIPart1,intEPart1,intSPart1) - intIPart1
+diPart1 = diPart1 + max(intIPart1,intEPart1,intSPart1) - intEPart1
+diPart1 = diPart1 + max(intIPart1,intEPart1,intSPart1) - intSPart1
+
+# Step 10
+disPart1 = 0
+for (i in 1:18) {
+  if (floor(std[i]/10) != floor(sample1[i]/10)) {
+    disPart1 = disPart1 + 1
+  }
+}
+
+# Step 11
+VQ1 = difPart1 + dimPart1 + intPart1 + disPart1
+
+# Step 12
+VQ2 = dimPart1 + intPart1 + disPart1
+
+# Step 13
+dimPercPart1 = round((dimPart1 * 100) / difPart1)
+
+# Step 14
+intPercPart1 = round((intPart1 * 100) / difPart1)
+
+# Step 15 & 16
+step15Part1 = rep(NA, 18)
+for (i in 1:18) {
+  if (floor(sample1[i]/10) == 1 && floor(std[i]/10) == 1) {
+    if (sample1[i] > std[i]) {
+      step15Part1[i] = "+"
+    } else {
+      step15Part1[i] = "-"
+    }
+  } else if (floor(sample1[i]/10) == 0 && floor(std[i]/10) == 0) {
+    if (sample1[i] < std[i]) {
+      step15Part1[i] = "+"
+    } else {
+      step15Part1[i] = "-"
+    }
+  } else {
+    step15Part1[i] = "-"
+  }
+}
+
+# Step 17
+positiveSumPart1 = 0
+for (i in 1:18) {
+  if (step15Part1[i] == "+") {
+    positiveSumPart1 = positiveSumPart1 + step2Part1[i]
+  }
+}
+
+
+# Step 18
+negativeSumPart1 = 0
+for (i in 1:18) {
+  if (step15Part1[i] == "-") {
+    negativeSumPart1 = negativeSumPart1 + step2Part1[i]
+  }
+}
+
+# Step 19
+aiPercPart1 = round(negativeSumPart1 * 100 / (positiveSumPart1 + negativeSumPart1))
+
+# Step 19.5: repeat for part 2 
+# Step 2
+step2Part2 = abs(sample2 - std)
+
+# Step 3
+step3Part2 = rep(NA, 18)
+for (i in 1:18) {
+  if (step2Part2[i] >= 2) {
+    step3Part2[i] = step2Part2[i] - 2
+  } else if (step2Part2[i] == 1 || step2Part2[i] == 0) {
+    step3Part2[i] = 0
+  }
+}
+
+# Step 4
+dimIPart2 = sum(step2Part2[c(6,10:12,14,16)])
+dimEPart2 = sum(step2Part2[c(1,4,5,7,13,15)])
+dimSPart2 = sum(step2Part2[c(2,3,8,9,17,18)])
+
+# Step 5
+intIPart2 = sum(step3Part2[c(6,10:12,14,16)])
+intEPart2 = sum(step3Part2[c(1,4,5,7,13,15)])
+intSPart2 = sum(step3Part2[c(2,3,8,9,17,18)])
+
+# Step 6
+difPart2 = dimIPart2 + dimEPart2 + dimSPart2
+
+# Step 7
+intPart2 = intIPart2 + intEPart2 + intSPart2
+
+# Step 8
+dimPart2 = 0
+dimPart2 = dimPart2 + max(dimIPart2,dimEPart2,dimSPart2) - dimIPart2
+dimPart2 = dimPart2 + max(dimIPart2,dimEPart2,dimSPart2) - dimEPart2
+dimPart2 = dimPart2 + max(dimIPart2,dimEPart2,dimSPart2) - dimSPart2
+
+# Step 9 
+diPart2 = 0
+diPart2 = diPart2 + max(intIPart2,intEPart2,intSPart2) - intIPart2
+diPart2 = diPart2 + max(intIPart2,intEPart2,intSPart2) - intEPart2
+diPart2 = diPart2 + max(intIPart2,intEPart2,intSPart2) - intSPart2
+
+# Step 10
+disPart2 = 0
+for (i in 1:18) {
+  if (floor(std[i]/10) != floor(sample2[i]/10)) {
+    disPart2 = disPart2 + 1
+  }
+}
+
+# Step 11
+SQ1 = difPart2 + dimPart2 + intPart2 + disPart2
+
+# Step 12
+SQ2 = dimPart2 + intPart2 + disPart2
+
+# Step 13
+dimPercPart2 = round((dimPart2 * 100) / difPart2)
+
+# Step 14
+intPercPart2 = round((intPart2 * 100) / difPart2)
+
+# Step 15 & 16
+step15Part2 = rep(NA, 18)
+for (i in 1:18) {
+  if (floor(sample2[i]/10) == 1 && floor(std[i]/10) == 1) {
+    if (sample2[i] > std[i]) {
+      step15Part2[i] = "+"
+    } else {
+      step15Part2[i] = "-"
+    }
+  } else if (floor(sample2[i]/10) == 0 && floor(std[i]/10) == 0) {
+    if (sample2[i] < std[i]) {
+      step15Part2[i] = "+"
+    } else {
+      step15Part2[i] = "-"
+    }
+  } else {
+    step15Part2[i] = "-"
+  }
+}
+
+# Step 17
+positiveSumPart2 = 0
+for (i in 1:18) {
+  if (step15Part2[i] == "+") {
+    positiveSumPart2 = positiveSumPart2 + step2Part2[i]
+  }
+}
+
+
+# Step 18
+negativeSumPart2 = 0
+for (i in 1:18) {
+  if (step15Part2[i] == "-") {
+    negativeSumPart2 = negativeSumPart2 + step2Part2[i]
+  }
+}
+
+# Step 19
+aiPercPart2 = round(negativeSumPart2 * 100 / (positiveSumPart2 + negativeSumPart2))
+
+# Step 20 & 21
+BQr1 = round(SQ1/VQ1, digits = 1)
+BQa1 = ceiling(mean(c(SQ1,VQ1)))
+
+# Step 22 & 23
+BQr2 = round(SQ2/VQ2, digits = 1)
+BQa2 = ceiling(mean(c(SQ2,VQ2)))
+
+# Step 24 & 25
+if (BQr1 < 1) {
+  CQ1 = round((2-BQr1) * BQa1)
+} else {
+  CQ1 = round(BQr1 * BQa1)
+}
+if (BQr2 < 1) {
+  CQ2 = round((2-BQr2) * BQa2)
+} else {
+  CQ2 = round(BQr2 * BQa2)
+}
+
+# Step 26
+rho1 = (1000 - sum(step2Part1^2))/1000
+rho2 = (1000 - sum(step2Part2^2))/1000
+
+# Step 27
+difPart1difPart2 = difPart1/difPart2
+```
+
+#### Plotting on an Axiogram
+
+```{r}
+  print(negativeSumPart1 + positiveSumPart1 == difPart1)
+  print(negativeSumPart2 + positiveSumPart2 == difPart2)
+```
+

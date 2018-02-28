@@ -1,0 +1,340 @@
+---
+title: "Main Research"
+output: html_notebook
+---
+
+By Jack Wilburn
+
+### Libraries
+
+```{r, message = FALSE, warning = FALSE}
+library(readr)
+library(mosaic)
+library(gridExtra)
+library(caret)
+library(bst)
+library(xgboost)
+library(rattle)
+```
+
+### Importing and Cleaning Data
+
+
+```{r, message = FALSE, warning = FALSE}
+# execs import and cleaning
+execs = read_csv("~/Programming/Rstudio/3rdYear(370)/CliffHurst/SeniorExecs.csv")
+execs = execs[,c(1,2,4:37,44:54)]
+execs$dimIPart1 = execs$DIMI1
+execs$dimEPart1 = execs$DIME1
+execs$dimSPart1 = execs$DIMS1
+execs$intIPart1 = execs$INTI1
+execs$intEPart1 = execs$INTE1
+execs$intSPart1 = execs$INTS1
+execs$difPart1 = execs$DIF1
+execs$intPart1 = execs$INT1
+execs$dimPart1 = execs$DIM1
+execs$diPart1 = execs$DI1
+execs$disPart1 = execs$DIS1
+execs$VQ1 = execs$VQ1
+execs$VQ2 = execs$VQ2
+execs$dimPercPart1 = execs$DIMper1
+execs$intPercPart1 = execs$INTper1
+execs$aiPercPart1 = execs$AIper1
+execs$dimIPart2 = execs$DIMI2
+execs$dimEPart2 = execs$DIME2
+execs$dimSPart2 = execs$DIMS2
+execs$intIPart2 = execs$INTI2
+execs$intEPart2 = execs$INTE2
+execs$intSPart2 = execs$INTS2
+execs$difPart2 = execs$DIF2
+execs$intPart2 = execs$INT2
+execs$dimPart2 = execs$DIM2
+execs$diPart2 = execs$DI2
+execs$disPart2 = execs$DIS2
+execs$SQ1 = execs$SQ1
+execs$SQ2 = execs$SQ2
+execs$dimPercPart2 = execs$DIMper2
+execs$intPercPart2 = execs$INTper2
+execs$aiPercPart2 = execs$AIper2
+execs$BQr1 = execs$BQr1
+execs$BQr2 = execs$BQr2
+execs$BQa1 = execs$BQa1
+execs$BQa2 = execs$BQa2
+execs$CQ1 = execs$CQ1
+execs$CQ2 = execs$CQ2
+execs$rho1 = (execs$Rho1)/1000
+execs$rho2 = (execs$Rho2)/1000
+execs$difPart1difPart2 = execs$DIF1divDIF2
+execs$type = "Executive"
+execs = cbind(execs[,48:58], execs[,38:39], execs[59:72], execs[,40:41], execs[,73:75], execs[,42:47], execs[,76:79])
+execs[, 1:41] = sapply(execs[, 1:41], as.numeric)
+execs$type = factor(execs$type)
+
+# colStus import and cleaning
+colStus = read_csv("~/Programming/Rstudio/3rdYear(370)/CliffHurst/CollegeStudents.csv")
+colStus = colStus[,c(14:15,17:50,57:67)]
+colStus$dimIPart1 = colStus$DIMI1
+colStus$dimEPart1 = colStus$DIME1
+colStus$dimSPart1 = colStus$DIMS1
+colStus$intIPart1 = colStus$INTI1
+colStus$intEPart1 = colStus$INTE1
+colStus$intSPart1 = colStus$INTS1
+colStus$difPart1 = colStus$DIF1
+colStus$intPart1 = colStus$INT1
+colStus$dimPart1 = colStus$DIM1
+colStus$diPart1 = colStus$DI1
+colStus$disPart1 = colStus$DIS1
+colStus$VQ1 = colStus$VQ1
+colStus$VQ2 = colStus$VQ2
+colStus$dimPercPart1 = colStus$DIMper1
+colStus$intPercPart1 = colStus$INTper1
+colStus$aiPercPart1 = (colStus$AIper1)
+colStus$dimIPart2 = colStus$DIMI2
+colStus$dimEPart2 = colStus$DIME2
+colStus$dimSPart2 = colStus$DIMS2
+colStus$intIPart2 = colStus$INTI2
+colStus$intEPart2 = colStus$INTE2
+colStus$intSPart2 = colStus$INTS2
+colStus$difPart2 = colStus$DIF2
+colStus$intPart2 = colStus$INT2
+colStus$dimPart2 = colStus$DIM2
+colStus$diPart2 = colStus$DI2
+colStus$disPart2 = colStus$DIS2
+colStus$SQ1 = colStus$SQ1
+colStus$SQ2 = colStus$SQ2
+colStus$dimPercPart2 = colStus$DIMper2
+colStus$intPercPart2 = colStus$INTper2
+colStus$aiPercPart2 = (colStus$AIper2)
+colStus$BQr1 = colStus$BQr1
+colStus$BQr2 = colStus$BQR2
+colStus$BQa1 = colStus$BQa1
+colStus$BQa2 = colStus$BQa2
+colStus$CQ1 = colStus$CQ1
+colStus$CQ2 = colStus$CQ2
+colStus$rho1 = colStus$Rho1
+colStus$rho2 = colStus$Rho2
+colStus$difPart1difPart2 = colStus$DIF1divDIF2
+colStus$type = "CollegeStudent"
+colStus = cbind(colStus[,48:58], colStus[,38:39], colStus[59:72], colStus[,40:41], colStus[,73:75], colStus[,42], colStus[,76], colStus[,44:47], colStus[,77:80])
+colStus[, 1:41] = sapply(colStus[, 1:41], as.numeric)
+colStus$type = factor(colStus$type)
+colStus = na.omit(colStus)
+colStus$aiPercPart1 = (colStus$aiPercPart1) /100
+colStus$aiPercPart2 = (colStus$aiPercPart2) /100
+colStus$dimPercPart1 = (colStus$dimPercPart1) /100
+colStus$dimPercPart2 = (colStus$dimPercPart2) /100
+colStus$intPercPart1 = (colStus$intPercPart1) /100
+colStus$intPercPart2 = (colStus$intPercPart2) /100
+colStus$difPart1difPart2 = (colStus$difPart1difPart2) / 100
+
+# entreps import and cleaning
+entreps = read_csv("~/Programming/Rstudio/3rdYear(370)/CliffHurst/Entrepreneurs.csv")
+entreps = entreps[,c(15:51, 58:68)]
+entreps$dimIPart1 = entreps$DIMI1
+entreps$dimEPart1 = entreps$DIME1
+entreps$dimSPart1 = entreps$DIMS1
+entreps$intIPart1 = entreps$INTI1
+entreps$intEPart1 = entreps$INTE1
+entreps$intSPart1 = entreps$INTS1
+entreps$difPart1 = entreps$DIF1
+entreps$intPart1 = entreps$INT1
+entreps$dimPart1 = entreps$DIM1
+entreps$diPart1 = entreps$DI1
+entreps$disPart1 = entreps$DIS1
+entreps$VQ1 = entreps$VQ1
+entreps$VQ2 = entreps$VQ2
+entreps$dimPercPart1 = entreps$DIMper1
+entreps$intPercPart1 = entreps$INTper1
+entreps$aiPercPart1 = (entreps$AIper1)
+entreps$dimIPart2 = entreps$DIMI2
+entreps$dimEPart2 = entreps$DIME2
+entreps$dimSPart2 = entreps$DIMS2
+entreps$intIPart2 = entreps$INTI2
+entreps$intEPart2 = entreps$INTE2
+entreps$intSPart2 = entreps$INTS2
+entreps$difPart2 = entreps$DIF2
+entreps$intPart2 = entreps$INT2
+entreps$dimPart2 = entreps$DIM2
+entreps$diPart2 = entreps$DI2
+entreps$disPart2 = entreps$DIS2
+entreps$SQ1 = entreps$SQ1
+entreps$SQ2 = entreps$SQ2
+entreps$dimPercPart2 = entreps$DIMper2
+entreps$intPercPart2 = entreps$INTper2
+entreps$aiPercPart2 = (entreps$AIper2)
+entreps$BQr1 = entreps$BQr1
+entreps$BQr2 = entreps$BQR2
+entreps$BQa1 = entreps$BQa1
+entreps$BQa2 = entreps$BQa2
+entreps$CQ1 = entreps$CQ1
+entreps$CQ2 = entreps$CQ2
+entreps$rho1 = entreps$Rho1
+entreps$rho2 = entreps$Rho2
+entreps$difPart1difPart2 = entreps$DIF1divDIF2
+entreps$type = "Entrepreneur"
+entreps = cbind(entreps[,49:59], entreps[,39:40], entreps[60:73], entreps[,41:42], entreps[,74:76], entreps[,43], entreps[,77], entreps[,45:48], entreps[,78:81])
+entreps[, 1:41] = sapply(entreps[, 1:41], as.numeric)
+entreps$type = factor(entreps$type)
+entreps$aiPercPart1 = (entreps$aiPercPart1) /100
+entreps$aiPercPart2 = (entreps$aiPercPart2) /100
+entreps$dimPercPart1 = (entreps$dimPercPart1) /100
+entreps$dimPercPart2 = (entreps$dimPercPart2) /100
+entreps$intPercPart1 = (entreps$intPercPart1) /100
+entreps$intPercPart2 = (entreps$intPercPart2) /100
+entreps$difPart1difPart2 = (entreps$difPart1difPart2) / 100
+
+# senMans importing and cleaning
+senMans = read_csv("~/Programming/Rstudio/3rdYear(370)/CliffHurst/SeniorMgrs.csv")
+senMans = senMans[,c(15:16, 18:51, 58:68)]
+senMans$dimIPart1 = senMans$DIMI1
+senMans$dimEPart1 = senMans$DIME1
+senMans$dimSPart1 = senMans$DIMS1
+senMans$intIPart1 = senMans$INTI1
+senMans$intEPart1 = senMans$INTE1
+senMans$intSPart1 = senMans$INTS1
+senMans$difPart1 = senMans$DIF1
+senMans$intPart1 = senMans$INT1
+senMans$dimPart1 = senMans$DIM1
+senMans$diPart1 = senMans$DI1
+senMans$disPart1 = senMans$DIS1
+senMans$VQ1 = senMans$VQ1
+senMans$VQ2 = senMans$VQ2
+senMans$dimPercPart1 = senMans$DIMper1
+senMans$intPercPart1 = senMans$INTper1
+senMans$aiPercPart1 = (senMans$AIper1)
+senMans$dimIPart2 = senMans$DIMI2
+senMans$dimEPart2 = senMans$DIME2
+senMans$dimSPart2 = senMans$DIMS2
+senMans$intIPart2 = senMans$INTI2
+senMans$intEPart2 = senMans$INTE2
+senMans$intSPart2 = senMans$INTS2
+senMans$difPart2 = senMans$DIF2
+senMans$intPart2 = senMans$INT2
+senMans$dimPart2 = senMans$DIM2
+senMans$diPart2 = senMans$DI2
+senMans$disPart2 = senMans$DIS2
+senMans$SQ1 = senMans$SQ1
+senMans$SQ2 = senMans$SQ2
+senMans$dimPercPart2 = senMans$DIMper2
+senMans$intPercPart2 = senMans$INTper2
+senMans$aiPercPart2 = (senMans$AIper2)
+senMans$BQr1 = senMans$BQr1
+senMans$BQr2 = senMans$BQr2
+senMans$BQa1 = senMans$BQa1
+senMans$BQa2 = senMans$BQa2
+senMans$CQ1 = senMans$CQ1
+senMans$CQ2 = senMans$CQ2
+senMans$rho1 = senMans$Rho1
+senMans$rho2 = senMans$Rho2
+senMans$difPart1difPart2 = senMans$DIF1divDIF2
+senMans$type = "SeniorManager"
+senMans = cbind(senMans[,48:58], senMans[,38:39], senMans[59:72], senMans[,40:41], senMans[,73:75], senMans[,42:47], senMans[,76:79])
+senMans[, 1:41] = sapply(senMans[, 1:41], as.numeric)
+senMans$type = factor(senMans$type)
+senMans = na.omit(senMans)
+senMans$aiPercPart1 = (senMans$aiPercPart1) /100
+senMans$aiPercPart2 = (senMans$aiPercPart2) /100
+senMans$dimPercPart1 = (senMans$dimPercPart1) /100
+senMans$dimPercPart2 = (senMans$dimPercPart2) /100
+senMans$intPercPart1 = (senMans$intPercPart1) /100
+senMans$intPercPart2 = (senMans$intPercPart2) /100
+senMans$difPart1difPart2 = (senMans$difPart1difPart2) / 100
+
+# Binding datasets together to analyze and draw out differences between groups
+comb = rbind(execs, colStus, entreps, senMans)
+comb[, 1:41] = sapply(comb[, 1:41], as.numeric)
+comb$type = factor(comb$type)
+```
+
+
+### EDA
+
+```{r, fig.height = 6}
+a = ggplot() +
+  geom_density(aes(x = execs$CQ1), alpha = 0.5, fill = "blue") +
+  geom_density(aes(x = colStus$CQ1), alpha = 0.5, fill = "green") + 
+  geom_density(aes(x = entreps$CQ1), alpha = 0.5, fill = "red") +
+  geom_density(aes(x = senMans$CQ1), alpha = 0.5, fill = "black") +
+  labs(x = "CQ1")
+b = ggplot() +
+  geom_density(aes(x = execs$rho1), alpha = 0.5, fill = "blue") +
+  geom_density(aes(x = colStus$rho1), alpha = 0.5, fill = "green") + 
+  geom_density(aes(x = entreps$rho1), alpha = 0.5, fill = "red") +
+  geom_density(aes(x = senMans$rho1), alpha = 0.5, fill = "black") +
+  labs(x = "Rho1")
+c = ggplot() +
+  geom_density(aes(x = execs$rho2), alpha = 0.5, fill = "blue") +
+  geom_density(aes(x = colStus$rho2), alpha = 0.5, fill = "green") + 
+  geom_density(aes(x = entreps$rho2), alpha = 0.5, fill = "red") +
+  geom_density(aes(x = senMans$rho2), alpha = 0.5, fill = "black") +
+  labs(x = "Rho2")
+e = ggplot() +
+  geom_density(aes(x = execs$aiPercPart1), alpha = 0.5, fill = "blue") +
+  geom_density(aes(x = colStus$aiPercPart1), alpha = 0.5, fill = "green") + 
+  geom_density(aes(x = entreps$aiPercPart1), alpha = 0.5, fill = "red") +
+  geom_density(aes(x = senMans$aiPercPart1), alpha = 0.5, fill = "black") +
+  labs(x = "AI Percentage Part 1")
+f = ggplot() +
+  geom_density(aes(x = execs$aiPercPart2), alpha = 0.5, fill = "blue") +
+  geom_density(aes(x = colStus$aiPercPart2), alpha = 0.5, fill = "green") + 
+  geom_density(aes(x = entreps$aiPercPart2), alpha = 0.5, fill = "red") +
+  geom_density(aes(x = senMans$aiPercPart2), alpha = 0.5, fill = "black") +
+  labs(x = "AI Percentage Part 2")
+grid.arrange(a, b, c, e, f, ncol = 2)
+```
+
+### Questions
+
+1) Are rho1 and rho2 correlated in practice?
+2) do rho1 scores between samples differ
+3) Take samples of execs to examine between categories.
+4) Is the correlation that's baked into the model present in corelations
+
+### Testing
+
+1) 
+```{r}
+ggplot(comb, aes(rho1, rho2)) + geom_point(alpha = 0.5, aes(color = type))
+cor(comb$rho1, comb$rho2)
+ggplot() + 
+  geom_point(aes(output$rho1, output$rho2), color = "dark grey") + 
+  geom_point(aes(comb$rho1, comb$rho2, color = comb$type), alpha = 0.5) + 
+  labs(x = "Rho1",
+       y = "Rho2",
+       color = "Type")
+```
+
+2)
+
+```{r}
+sample1 = sample(nrow(execs), 94)
+sampledexces1 = execs[sample1,]
+sample2 = sample(nrow(execs), 94)
+sampledexces2 = execs[sample2,]
+sample3 = sample(nrow(execs), 94)
+sampledexces3 = execs[sample3,]
+
+t.test(sampledexces1$rho1, entreps$rho1)
+t.test(sampledexces2$rho1, entreps$rho1)
+t.test(sampledexces3$rho1, entreps$rho1)
+```
+
+
+3)
+
+```{r}
+
+
+pcaentreps = prcomp(entreps[1:41], scale = TRUE)
+pcaentreps$rotation[1:41,1:7]
+
+pcaoutput = prcomp(output[1:41], scale = TRUE)
+pcaoutput$rotation[1:41,1:7]
+
+```
+
+
+
+
+
+
