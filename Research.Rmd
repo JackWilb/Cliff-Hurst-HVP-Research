@@ -12,9 +12,12 @@ library(readr)
 library(mosaic)
 library(gridExtra)
 library(caret)
-library(bst)
-library(xgboost)
-library(rattle)
+library(reshape)
+library(car)
+library(broom)
+library(e1071)
+library(leaps)
+library(psych)
 ```
 
 ### Importing and Cleaning Data
@@ -22,7 +25,7 @@ library(rattle)
 
 ```{r, message = FALSE, warning = FALSE}
 # execs import and cleaning
-execs = read_csv("~/Programming/Rstudio/3rdYear(370)/CliffHurst/SeniorExecs.csv")
+execs = read_csv("SeniorExecs.csv")
 execs = execs[,c(1,2,4:37,44:54)]
 execs$dimIPart1 = execs$DIMI1
 execs$dimEPart1 = execs$DIME1
@@ -71,7 +74,7 @@ execs[, 1:41] = sapply(execs[, 1:41], as.numeric)
 execs$type = factor(execs$type)
 
 # colStus import and cleaning
-colStus = read_csv("~/Programming/Rstudio/3rdYear(370)/CliffHurst/CollegeStudents.csv")
+colStus = read_csv("CollegeStudents.csv")
 colStus = colStus[,c(14:15,17:50,57:67)]
 colStus$dimIPart1 = colStus$DIMI1
 colStus$dimEPart1 = colStus$DIME1
@@ -128,7 +131,7 @@ colStus$intPercPart2 = (colStus$intPercPart2) /100
 colStus$difPart1difPart2 = (colStus$difPart1difPart2) / 100
 
 # entreps import and cleaning
-entreps = read_csv("~/Programming/Rstudio/3rdYear(370)/CliffHurst/Entrepreneurs.csv")
+entreps = read_csv("Entrepreneurs.csv")
 entreps = entreps[,c(15:51, 58:68)]
 entreps$dimIPart1 = entreps$DIMI1
 entreps$dimEPart1 = entreps$DIME1
@@ -184,7 +187,7 @@ entreps$intPercPart2 = (entreps$intPercPart2) /100
 entreps$difPart1difPart2 = (entreps$difPart1difPart2) / 100
 
 # senMans importing and cleaning
-senMans = read_csv("~/Programming/Rstudio/3rdYear(370)/CliffHurst/SeniorMgrs.csv")
+senMans = read_csv("SeniorMgrs.csv")
 senMans = senMans[,c(15:16, 18:51, 58:68)]
 senMans$dimIPart1 = senMans$DIMI1
 senMans$dimEPart1 = senMans$DIME1
@@ -296,12 +299,6 @@ grid.arrange(a, b, c, e, f, ncol = 2)
 ```{r}
 ggplot(comb, aes(rho1, rho2)) + geom_point(alpha = 0.5, aes(color = type))
 cor(comb$rho1, comb$rho2)
-ggplot() + 
-  geom_point(aes(output$rho1, output$rho2), color = "dark grey") + 
-  geom_point(aes(comb$rho1, comb$rho2, color = comb$type), alpha = 0.5) + 
-  labs(x = "Rho1",
-       y = "Rho2",
-       color = "Type")
 ```
 
 2)
@@ -323,15 +320,112 @@ t.test(sampledexces3$rho1, entreps$rho1)
 3)
 
 ```{r}
-
-
-pcaentreps = prcomp(entreps[1:41], scale = TRUE)
+pcaentreps = prcomp(entreps[1:41], scale = TRUE, center = TRUE)
 pcaentreps$rotation[1:41,1:7]
+biplot(pcaentreps)
 
-pcaoutput = prcomp(output[1:41], scale = TRUE)
-pcaoutput$rotation[1:41,1:7]
-
+#pcacomb = prcomp(comb[1:41], scale = TRUE)
+#pcacomb$rotation[1:41,1:7]
+glm = glm(type ~ ., data = entsenman[,c(31:41,42)], family = "binomial")
+tidy(glm)
 ```
+
+Significantly different variables: dimEPart1, dipart1, VQ1, VQ2, dimpercpart1, dimIpart2, intSPart2, BQr1, BQa1, BQa2, CQ1, CQ2, rho1, rho2, difPart1difPart2
+
+### Entreps vs SenMans
+
+```{r, fig.width = 10, fig.height=20}
+entsenman = rbind(entreps, senMans)
+meltentsenman = melt(entsenman)
+ggplot(meltentsenman) +
+  geom_density(aes(x = value, fill = type), alpha = 0.5) +
+  facet_wrap( ~ variable, scales = "free", ncol = 4)
+```
+
+Significantly different variables: dimEPart1, dispart1, VQ1, VQ2, dimpercpart1, dimIpart2, intSPart2, BQr1, BQa1, BQa2, CQ1, CQ2, rho1, rho2, difPart1difPart2
+
+```{r}
+set.seed(10)
+sample = sample(nrow(entsenman), nrow(entsenman)/2)
+train = entsenman[sample,]
+test = entsenman[-sample,]
+
+glm = glm(type ~ dimEPart1 + diPart1 + VQ1 + VQ2 + dimPercPart1 + dimIPart2 + intSPart2 + BQr1 + BQa1 + BQa2 + CQ1 + CQ2 + rho1 + rho2 + difPart1difPart2, data = entsenman, family = "binomial")
+Anova(glm)
+anova(glm)
+
+glm2 = glm(type ~ dimIPart2 + BQr1 + CQ1 + rho1 + rho2, data = entsenman, family = "binomial")
+Anova(glm2)
+anova(glm2)
+
+glm2 = glm(type ~ dimIPart2 + BQr1 + CQ1 + rho1 + rho2, data = train, family = "binomial")
+preds = predict(glm2, test, response = "binomial")
+preds = ifelse(preds>0, "SeniorManager", "Entrepreneur")
+confusionMatrix(preds, test$type)
+
+glm3 = glm(type ~ . - difPart1 - dimPart1 - VQ2 - intPart2 - SQ1 - SQ2 - aiPercPart1 - intEPart2 - difPart2
+           - intIPart1 - intEPart1 - intSPart1 - intEPart1,
+           data = entsenman, family = "binomial")
+Anova(glm3)
+anova(glm3)
+
+glm3 = glm(type ~ ., data = train, family = "binomial")
+preds = predict(glm3, test, response = "binomial")
+preds = ifelse(preds>0, "SeniorManager", "Entrepreneur")
+confusionMatrix(preds, test$type)
+```
+
+feature selection
+
+```{r}
+ffs = regsubsets(type ~ ., data = entsenman, nvmax = 10)
+summary(ffs)
+plot(ffs)
+```
+
+Variables where the 2 groups differ:
+```{r}
+# differ
+print("Variables that differ between groups:")
+for (i in names(entsenman)[1:41]) {
+  a = wilcox.test(get(i) ~ type, data = entsenman)
+  if (a$p.value < 0.05) {
+    print(c(i, a$p.value))
+  }
+}
+print(" ")
+
+# don't differ
+print("Variables that don't differ between groups:")
+for (i in names(entsenman)[1:41]) {
+  a = wilcox.test(get(i) ~ type, data = entsenman)
+  if (a$p.value > 0.05) {
+    print(c(i, a$p.value))
+  }
+}
+```
+
+EFA in R
+
+```{r}
+corMat = cor(entreps[1:41])
+factors = fa(r = corMat, nfactors = 1, n.obs = nrow(entreps), rotate = "promax")
+factors
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
