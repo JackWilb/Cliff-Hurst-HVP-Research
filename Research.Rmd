@@ -324,10 +324,12 @@ pcaentreps = prcomp(entreps[1:41], scale = TRUE, center = TRUE)
 pcaentreps$rotation[1:41,1:7]
 biplot(pcaentreps)
 
-#pcacomb = prcomp(comb[1:41], scale = TRUE)
-#pcacomb$rotation[1:41,1:7]
-glm = glm(type ~ ., data = entsenman[,c(31:41,42)], family = "binomial")
-tidy(glm)
+entsenman = rbind(entreps, senMans)
+pcaentsenman = prcomp(entsenman[1:41], scale = TRUE, center = TRUE)
+summary(pcaentsenman)
+
+ggplot(as.data.frame(pcaentsenman$x), aes(PC1, PC2)) + 
+  geom_point(aes(color = entsenman$type))
 ```
 
 Significantly different variables: dimEPart1, dipart1, VQ1, VQ2, dimpercpart1, dimIpart2, intSPart2, BQr1, BQa1, BQa2, CQ1, CQ2, rho1, rho2, difPart1difPart2
@@ -408,10 +410,13 @@ for (i in names(entsenman)[1:41]) {
 EFA in R
 
 ```{r}
-corMat = cor(entreps[1:41])
-factors = fa(r = corMat, nfactors = 1, n.obs = nrow(entreps), rotate = "promax")
+covMat = cov(comb[1:41])
+covMat
+### some covariance is too high, need to remove variables that covary too much to run factor analysis!
+factors = factanal(covmat = covMat, factors = 7, n.obs = nrow(comb), rotation = "varimax")
 factors
 ```
+
 
 
 
