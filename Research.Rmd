@@ -301,21 +301,6 @@ ggplot(comb, aes(rho1, rho2)) + geom_point(alpha = 0.5, aes(color = type))
 cor(comb$rho1, comb$rho2)
 ```
 
-2)
-
-```{r}
-sample1 = sample(nrow(execs), 94)
-sampledexces1 = execs[sample1,]
-sample2 = sample(nrow(execs), 94)
-sampledexces2 = execs[sample2,]
-sample3 = sample(nrow(execs), 94)
-sampledexces3 = execs[sample3,]
-
-t.test(sampledexces1$rho1, entreps$rho1)
-t.test(sampledexces2$rho1, entreps$rho1)
-t.test(sampledexces3$rho1, entreps$rho1)
-```
-
 
 3)
 
@@ -324,13 +309,14 @@ pcaentreps = prcomp(entreps[1:41], scale = TRUE, center = TRUE)
 pcaentreps$rotation[1:41,1:7]
 biplot(pcaentreps)
 
-#pcacomb = prcomp(comb[1:41], scale = TRUE)
-#pcacomb$rotation[1:41,1:7]
-glm = glm(type ~ ., data = entsenman[,c(31:41,42)], family = "binomial")
-tidy(glm)
+entsenman = rbind(entreps, senMans)
+pcaentsenman = prcomp(entsenman[1:41], scale = TRUE, center = TRUE)
+summary(pcaentsenman)
+
+ggplot(as.data.frame(pcaentsenman$x), aes(PC1, PC2)) + 
+  geom_point(aes(color = entsenman$type))
 ```
 
-Significantly different variables: dimEPart1, dipart1, VQ1, VQ2, dimpercpart1, dimIpart2, intSPart2, BQr1, BQa1, BQa2, CQ1, CQ2, rho1, rho2, difPart1difPart2
 
 ### Entreps vs SenMans
 
@@ -342,18 +328,8 @@ ggplot(meltentsenman) +
   facet_wrap( ~ variable, scales = "free", ncol = 4)
 ```
 
-Significantly different variables: dimEPart1, dispart1, VQ1, VQ2, dimpercpart1, dimIpart2, intSPart2, BQr1, BQa1, BQa2, CQ1, CQ2, rho1, rho2, difPart1difPart2
 
 ```{r}
-set.seed(10)
-sample = sample(nrow(entsenman), nrow(entsenman)/2)
-train = entsenman[sample,]
-test = entsenman[-sample,]
-
-glm = glm(type ~ dimEPart1 + diPart1 + VQ1 + VQ2 + dimPercPart1 + dimIPart2 + intSPart2 + BQr1 + BQa1 + BQa2 + CQ1 + CQ2 + rho1 + rho2 + difPart1difPart2, data = entsenman, family = "binomial")
-Anova(glm)
-anova(glm)
-
 glm2 = glm(type ~ dimIPart2 + BQr1 + CQ1 + rho1 + rho2, data = entsenman, family = "binomial")
 Anova(glm2)
 anova(glm2)
@@ -363,16 +339,16 @@ preds = predict(glm2, test, response = "binomial")
 preds = ifelse(preds>0, "SeniorManager", "Entrepreneur")
 confusionMatrix(preds, test$type)
 
-glm3 = glm(type ~ . - difPart1 - dimPart1 - VQ2 - intPart2 - SQ1 - SQ2 - aiPercPart1 - intEPart2 - difPart2
-           - intIPart1 - intEPart1 - intSPart1 - intEPart1,
-           data = entsenman, family = "binomial")
-Anova(glm3)
-anova(glm3)
+#glm3 = glm(type ~ . - difPart1 - dimPart1 - VQ2 - intPart2 - SQ1 - SQ2 - aiPercPart1 - intEPart2 - difPart2
+#           - intIPart1 - intEPart1 - intSPart1 - intEPart1,
+#           data = entsenman, family = "binomial")
+#Anova(glm3)
+#anova(glm3)
 
-glm3 = glm(type ~ ., data = train, family = "binomial")
-preds = predict(glm3, test, response = "binomial")
-preds = ifelse(preds>0, "SeniorManager", "Entrepreneur")
-confusionMatrix(preds, test$type)
+#glm3 = glm(type ~ ., data = train, family = "binomial")
+#preds = predict(glm3, test, response = "binomial")
+#preds = ifelse(preds>0, "SeniorManager", "Entrepreneur")
+#confusionMatrix(preds, test$type)
 ```
 
 feature selection
@@ -380,8 +356,15 @@ feature selection
 ```{r}
 ffs = regsubsets(type ~ ., data = entsenman, nvmax = 10)
 summary(ffs)
-plot(ffs)
+a = data.frame(x = rep(1:42), y = ffs$rss)
+ggplot(a, aes(x, y)) + geom_point() + labs(x = "# of Features", y = "RSS")
 ```
+
+Important variables from FFS are:
+```{r}
+ffs$xnames[c(6, 9, 19, 22, 27)]
+```
+
 
 Variables where the 2 groups differ:
 ```{r}
@@ -408,10 +391,12 @@ for (i in names(entsenman)[1:41]) {
 EFA in R
 
 ```{r}
-corMat = cor(entreps[1:41])
-factors = fa(r = corMat, nfactors = 1, n.obs = nrow(entreps), rotate = "promax")
+covMat = cov(comb[1:41])
+### some covariance is too high, need to remove variables that covary too much to run factor analysis!
+factors = factanal(covmat = covMat, factors = 7, n.obs = nrow(comb), rotation = "varimax")
 factors
 ```
+
 
 
 

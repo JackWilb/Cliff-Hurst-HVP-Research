@@ -357,6 +357,32 @@ output = output[, c(1:3,7,9:19,23,25:41)]
 
 
 
+PCA Sim
+
+```{r}
+entP1 = rnorm(mean = 5, sd = 1, n = 100)
+entP2 = rnorm(mean = 50, sd = 1, n = 100)
+entP3 = rnorm(mean = 100, sd = 1, n = 100)
+senP1 = rnorm(mean = 50, sd = 1, n = 100)
+senP2 = rnorm(mean = 100, sd = 1, n = 100)
+senP3 = rnorm(mean = 5, sd = 1, n = 100)
+
+ent = data.frame(P1 = entP1, P2 = entP2, P3 = entP3)
+sen = data.frame(P1 = senP1, P2= senP2, P3 = senP3)
+
+ent$type = "ent"
+sen$type = "sen"
+
+comb = rbind(ent, sen)
+pcacomb = prcomp(comb[1:3], scale = TRUE, center = TRUE)
+summary(pcacomb)
+
+ggplot(as.data.frame(pcacomb$x), aes(PC1, PC2)) + 
+  geom_point(aes(color = comb$type))
+
+```
+
+
 
 
 
