@@ -330,6 +330,11 @@ ggplot(meltentsenman) +
 
 
 ```{r}
+set.seed(999)
+sample = sample(nrow(entsenman), nrow(entsenman)/2)
+train = entsenman[sample,]
+test = entsenman[-sample,]
+
 glm2 = glm(type ~ dimIPart2 + BQr1 + CQ1 + rho1 + rho2, data = entsenman, family = "binomial")
 Anova(glm2)
 anova(glm2)
