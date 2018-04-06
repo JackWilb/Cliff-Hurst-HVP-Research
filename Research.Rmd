@@ -18,6 +18,7 @@ library(broom)
 library(e1071)
 library(leaps)
 library(psych)
+library(glmnet)
 ```
 
 ### Importing and Cleaning Data
@@ -247,6 +248,9 @@ senMans$difPart1difPart2 = (senMans$difPart1difPart2) / 100
 comb = rbind(execs, colStus, entreps, senMans)
 comb[, 1:41] = sapply(comb[, 1:41], as.numeric)
 comb$type = factor(comb$type)
+comb$capact = comb$dimIPart2 + comb$dimEPart2
+comb$FQ = comb$di
+#Ask here
 ```
 
 
@@ -313,7 +317,7 @@ entsenman = rbind(entreps, senMans)
 pcaentsenman = prcomp(entsenman[1:41], scale = TRUE, center = TRUE)
 summary(pcaentsenman)
 
-ggplot(as.data.frame(pcaentsenman$x), aes(PC1, PC2)) + 
+ggplot(as.data.frame(pcaentsenman$x), aes(PC2, PC4)) + 
   geom_point(aes(color = entsenman$type))
 ```
 
@@ -331,6 +335,7 @@ ggplot(meltentsenman) +
 
 ```{r}
 set.seed(999)
+entsenman$type2 = ifelse(entsenman$type == "SeniorManager", 1, 0)
 sample = sample(nrow(entsenman), nrow(entsenman)/2)
 train = entsenman[sample,]
 test = entsenman[-sample,]
@@ -341,7 +346,13 @@ anova(glm2)
 
 glm2 = glm(type ~ dimIPart2 + BQr1 + CQ1 + rho1 + rho2, data = train, family = "binomial")
 preds = predict(glm2, test, response = "binomial")
-preds = ifelse(preds>0, "SeniorManager", "Entrepreneur")
+preds = factor(ifelse(preds>0, "SeniorManager", "Entrepreneur"))
+confusionMatrix(preds, test$type)
+
+registerDoParallel(4)
+cvglm = cv.glmnet(as.matrix(train[,1:41]), train$type2, nfolds = 10, parallel = TRUE)
+preds = predict(cvglm, as.matrix(test[1:41]))
+preds = factor(ifelse(preds>0.5, "SeniorManager", "Entrepreneur"))
 confusionMatrix(preds, test$type)
 
 #glm3 = glm(type ~ . - difPart1 - dimPart1 - VQ2 - intPart2 - SQ1 - SQ2 - aiPercPart1 - intEPart2 - difPart2
@@ -367,7 +378,7 @@ ggplot(a, aes(x, y)) + geom_point() + labs(x = "# of Features", y = "RSS")
 
 Important variables from FFS are:
 ```{r}
-ffs$xnames[c(6, 9, 19, 22, 27)]
+ffs$xnames[c(6, 9, 19, 22, 27, 39)]
 ```
 
 
@@ -401,11 +412,6 @@ covMat = cov(comb[1:41])
 factors = factanal(covmat = covMat, factors = 7, n.obs = nrow(comb), rotation = "varimax")
 factors
 ```
-
-
-
-
-
 
 
 
